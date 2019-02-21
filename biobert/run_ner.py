@@ -194,7 +194,7 @@ class DataProcessor(object):
                 return lines
 
         if FLAGS.dataset == 'conll':
-            with open(input_file) as f:
+            with tf.gfile.GFile(input_file) as f:
                 lines = []
                 words = []
                 labels = []
@@ -236,7 +236,7 @@ class NerProcessor(DataProcessor):
 
     def get_labels(self):
         labels = {
-            '12b2': ["B", "I", "O", "X", "[CLS]", "[SEP]"],
+            'i2b2': ["B", "I", "O", "X", "[CLS]", "[SEP]"],
             'conll': ["B-MISC", "I-MISC", "O", "B-PER", "I-PER", "B-ORG", "I-ORG", "B-LOC", "I-LOC", "X","[CLS]","[SEP]"]
         }
 
