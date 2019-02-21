@@ -218,14 +218,32 @@ class NerProcessor(DataProcessor):
         return examples
 
 
-def write_tokens(tokens,mode):
+#def write_tokens(tokens,mode):
+#    if mode=="test":
+#        path = os.path.join(FLAGS.local_output_dir, "token_"+mode+".txt")
+#        wf = tf.gfile.GFile(path,'a+')
+#        for token in tokens:
+#            if token!="**NULL**":
+#                wf.write(token+'\n')
+#        wf.close()
+
+def write_tokens(tokens, mode):
     if mode=="test":
-        path = os.path.join(FLAGS.local_output_dir, "token_"+mode+".txt")
-        wf = tf.gfile.GFile(path,'a+')
-        for token in tokens:
-            if token!="**NULL**":
+        path = os.path.join(FLAGS.local_output_dir, "token_" + mode + ".txt")
+
+        if tf.gfile.Exists(path):
+          with tf.gfile.GFile(path,'a') as wf:
+            for token in tokens:
+              if token!="**NULL**":
                 wf.write(token+'\n')
-        wf.close()
+            wf.close()
+
+        else:
+          with tf.gfile.GFile(path,'w+') as wf:
+            for token in tokens:
+              if token!="**NULL**":
+                wf.write(token+'\n')
+            wf.close()
 
 def convert_single_example(ex_index, example, label_map, max_seq_length, tokenizer,mode):
     textlist = example.text.split(' ')
@@ -278,7 +296,7 @@ def convert_single_example(ex_index, example, label_map, max_seq_length, tokeniz
     assert len(label_ids) == max_seq_length
     #assert len(label_mask) == max_seq_length
 
-    if ex_index < 5:
+    if ex_index == 0:
         tf.logging.info("*** Example ***")
         tf.logging.info("guid: %s" % (example.guid))
         tf.logging.info("tokens: %s" % " ".join(
@@ -435,14 +453,14 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
                 scaffold_fn = tpu_scaffold
             else:
                 tf.train.init_from_checkpoint(init_checkpoint, assignment_map)
-        tf.logging.info("**** Trainable Variables ****")
-
-        for var in tvars:
-            init_string = ""
-            if var.name in initialized_variable_names:
-                init_string = ", *INIT_FROM_CKPT*"
-            tf.logging.info("  name = %s, shape = %s%s", var.name, var.shape,
-                            init_string)
+#        tf.logging.info("**** Trainable Variables ****")
+#
+#        for var in tvars:
+#            init_string = ""
+#            if var.name in initialized_variable_names:
+#                init_string = ", *INIT_FROM_CKPT*"
+#            tf.logging.info("  name = %s, shape = %s%s", var.name, var.shape,
+#                            init_string)
         output_spec = None
         if mode == tf.estimator.ModeKeys.TRAIN:
             train_op = optimization.create_optimizer(
