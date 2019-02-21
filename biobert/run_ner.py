@@ -55,11 +55,6 @@ flags.DEFINE_string(
     "Initial checkpoint (usually from a pre-trained BERT model)."
 )
 
-flags.DEFINE_bool(
-    "do_lower_case", False,
-    "Whether to lower case the input text."
-)
-
 flags.DEFINE_integer(
     "max_seq_length", 128,
     "The maximum total input sequence length after WordPiece tokenization."
@@ -86,6 +81,8 @@ flags.DEFINE_float("learning_rate", 5e-5, "The initial learning rate for Adam.")
 flags.DEFINE_float("num_train_epochs", 10.0, "Total number of training epochs to perform.")
 
 flags.DEFINE_string("dataset", None, "Set dataset")
+
+flags.DEFINE_string("pretrained", "bert-base-uncased", "Set pretrained ")
 
 flags.DEFINE_float(
     "warmup_proportion", 0.1,
@@ -580,8 +577,12 @@ def main(_):
 
     label_list = processor.get_labels()
 
+    lower_case = False
+    if FLAGS.pretrained == 'bert-base-uncased':
+        lower_case = True
+
     tokenizer = tokenization.FullTokenizer(
-        vocab_file=FLAGS.vocab_file, do_lower_case=FLAGS.do_lower_case)
+        vocab_file=FLAGS.vocab_file, do_lower_case=lower_case)
     tpu_cluster_resolver = None
     if FLAGS.use_tpu and FLAGS.tpu_name:
         tpu_cluster_resolver = tf.contrib.cluster_resolver.TPUClusterResolver(

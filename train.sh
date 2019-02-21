@@ -21,4 +21,5 @@ python biobert/run_ner.py \
 	   --num_train_epochs=3.0 \
 	   --data_dir=$NER_DIR/ \
 	   --output_dir=$OUTPUT_DIR/ \
-	   --dataset=$dataset
+	   --dataset=$dataset \
+	   --pretrained=$pretrained
