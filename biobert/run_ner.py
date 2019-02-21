@@ -154,7 +154,7 @@ class DataProcessor(object):
     def _read_data(cls, input_file):
         """Reads a BIO data."""
 
-        if FLAGS.dataset == '12b2':
+        if FLAGS.dataset == 'i2b2':
             with tf.gfile.GFile(input_file) as f:
                 lines = []
                 words = []
@@ -190,7 +190,7 @@ class DataProcessor(object):
                     labels.append(label)
                 return lines
 
-        if FLAGS.dataset == 'conll':
+        if FLAGS.dataset == 'conll' or FLAGS.dataset == 'scito':
             with tf.gfile.GFile(input_file) as f:
                 lines = []
                 words = []
@@ -441,7 +441,7 @@ def create_model(bert_config, is_training, input_ids, input_mask,
         logits = tf.matmul(output_layer, output_weight, transpose_b=True)
         logits = tf.nn.bias_add(logits, output_bias)
 
-        if FLAGS.dataset == '1b2b':
+        if FLAGS.dataset == 'ib2b':
             logits = tf.reshape(logits, [-1, FLAGS.max_seq_length, 7])
         if FLAGS.dataset == 'conll':
             logits = tf.reshape(logits, [-1, FLAGS.max_seq_length, 13])
@@ -516,7 +516,7 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
             # def metric_fn(label_ids, logits):
                 predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
 
-                if FLAGS.dataset =='1b2b':
+                if FLAGS.dataset =='ib2b':
                     precision = tf_metrics.precision(label_ids,predictions,7,[1,2],average="macro")
                     recall = tf_metrics.recall(label_ids,predictions,7,[1,2],average="macro")
                     f = tf_metrics.f1(label_ids,predictions,7,[1,2],average="macro")
