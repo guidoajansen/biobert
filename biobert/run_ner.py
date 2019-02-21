@@ -240,7 +240,7 @@ class NerProcessor(DataProcessor):
             'conll': ["B-MISC", "I-MISC", "O", "B-PER", "I-PER", "B-ORG", "I-ORG", "B-LOC", "I-LOC", "X","[CLS]","[SEP]"]
         }
 
-        return labels(FLAGS.dataset)
+        return labels[FLAGS.dataset]
 
     def _create_example(self, lines, set_type):
         examples = []
