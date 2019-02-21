@@ -190,7 +190,7 @@ class DataProcessor(object):
                     labels.append(label)
                 return lines
 
-        if FLAGS.dataset == 'conll' or FLAGS.dataset == 'scito':
+        if FLAGS.dataset == 'conll':
             with tf.gfile.GFile(input_file) as f:
                 lines = []
                 words = []
@@ -199,6 +199,31 @@ class DataProcessor(object):
                     contends = line.strip()
                     word = line.strip().split(' ')[0]
                     label = line.strip().split(' ')[-1]
+                    if contends.startswith("-DOCSTART-"):
+                        continue
+                    if len(contends) == 0:
+
+                        if len(words) == 0: continue
+
+                        l = ' '.join([label for label in labels if len(label) > 0])
+                        w = ' '.join([word for word in words if len(word) > 0])
+                        lines.append([l, w])
+                        words = []
+                        labels = []
+                        continue
+                    words.append(word)
+                    labels.append(label)
+                return lines
+
+        if FLAGS.dataset == 'scito':
+            with tf.gfile.GFile(input_file) as f:
+                lines = []
+                words = []
+                labels = []
+                for line in f:
+                    contends = line.strip()
+                    word = line.strip().split('\t')[0]
+                    label = line.strip().split('\t')[-1]
                     if contends.startswith("-DOCSTART-"):
                         continue
                     if len(contends) == 0:
