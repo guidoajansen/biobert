@@ -4,7 +4,6 @@ eval=true
 dotest=false
 dataset="$1"
 #pretrained="$2"
-timestamp=$( date +%T )
 
 export TPU_NAME=biobert-tpu
 export PRETRAINED_DIR=gs://biobert-bucket/biobert-pubmed-pmc
@@ -21,5 +20,5 @@ python biobert/run_ner.py \
 	   --init_checkpoint=$PRETRAINED_DIR/bert_model.ckpt \
 	   --num_train_epochs=3.0 \
 	   --data_dir=$NER_DIR/ \
-	   --output_dir=$OUTPUT_DIR/$timestamp/ \
+	   --output_dir=$OUTPUT_DIR/ \
 	   --dataset=$dataset
