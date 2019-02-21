@@ -3,10 +3,10 @@ train=true
 eval=true
 dotest=false
 dataset="$1"
-#pretrained="$2"
+pretrained="$2"
 
 export TPU_NAME=biobert-tpu
-export PRETRAINED_DIR=gs://biobert-bucket/biobert-pubmed-pmc
+export PRETRAINED_DIR=gs://biobert-bucket/pre-trained/$pretrained
 export NER_DIR=gs://biobert-bucket/data/$dataset
 export OUTPUT_DIR=gs://biobert-bucket/output/$dataset
 

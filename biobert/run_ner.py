@@ -237,7 +237,8 @@ class NerProcessor(DataProcessor):
     def get_labels(self):
         labels = {
             'i2b2': ["B", "I", "O", "X", "[CLS]", "[SEP]"],
-            'conll': ["B-MISC", "I-MISC", "O", "B-PER", "I-PER", "B-ORG", "I-ORG", "B-LOC", "I-LOC", "X","[CLS]","[SEP]"]
+            'conll': ["B-MISC", "I-MISC", "O", "B-PER", "I-PER", "B-ORG", "I-ORG", "B-LOC", "I-LOC", "X","[CLS]","[SEP]"],
+            'scito': ["B-COM", "I-COM", "B-BRAND", "I-BRAND", "B-DEV", "I-DEV", "O", "X", "[CLS]", "[SEP]"]
         }
 
         return labels[FLAGS.dataset]
@@ -447,6 +448,9 @@ def create_model(bert_config, is_training, input_ids, input_mask,
             logits = tf.reshape(logits, [-1, FLAGS.max_seq_length, 7])
         if FLAGS.dataset == 'conll':
             logits = tf.reshape(logits, [-1, FLAGS.max_seq_length, 13])
+        if FLAGS.dataset == 'scito':
+            logits = tf.reshape(logits, [-1, FLAGS.max_seq_length, 11])
+
 
         # mask = tf.cast(input_mask,tf.float32)
         # loss = tf.contrib.seq2seq.sequence_loss(logits,labels,mask)
@@ -525,6 +529,12 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
                     precision = tf_metrics.precision(label_ids, predictions, 13, [1,2,4,5,6,7,8,9], average="macro")
                     recall = tf_metrics.recall(label_ids, predictions, 13, [1,2,4,5,6,7,8,9], average="macro")
                     f = tf_metrics.f1(label_ids, predictions, 13, [1,2,4,5,6,7,8,9], average="macro")
+
+                if FLAGS.dataset == 'scito':
+                    precision = tf_metrics.precision(label_ids, predictions, 11, [1,2,3,4,5,6,7], average="macro")
+                    recall = tf_metrics.recall(label_ids, predictions, 11, [1,2,3,4,5,6,7], average="macro")
+                    f = tf_metrics.f1(label_ids, predictions, 11, [1,2,3,4,5,6,7], average="macro")
+
 
                 return {
                     "eval_precision":precision,
