@@ -2,7 +2,7 @@
 train=true
 eval=true
 dotest=true
-timestamp=$( date +%T )
+timestamp=$( date +%s )
 dataset="$1"
 pretrained="$2"
 epochs="$3"
