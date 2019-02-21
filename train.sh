@@ -16,9 +16,9 @@ python biobert/run_ner.py \
 	   --do_eval=$eval \
 	   --do_test=$dotest \
 	   --use_tpu=true \
-	   --vocab_file=PRETRAINED_DIR/vocab.txt \
-	   --bert_config_file=PRETRAINED_DIR/bert_config.json \
-	   --init_checkpoint=PRETRAINED_DIR/bert_model.ckpt \
+	   --vocab_file=$PRETRAINED_DIR/vocab.txt \
+	   --bert_config_file=$PRETRAINED_DIR/bert_config.json \
+	   --init_checkpoint=$PRETRAINED_DIR/bert_model.ckpt \
 	   --num_train_epochs=3.0 \
 	   --data_dir=$NER_DIR/ \
 	   --output_dir=$OUTPUT_DIR/$timestamp \
