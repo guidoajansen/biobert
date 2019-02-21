@@ -3,18 +3,8 @@ train=true
 eval=true
 dotest=false
 dataset="$1"
-pretrained="$2"
+#pretrained="$2"
 timestamp=$( date +%T )
-
-if [ "$1" -eq "" ]
-  then
-    echo "Please select a dataset (i2b2 or conll)"
-fi
-
-if [ "$2" -eq "" ]
-  then
-    echo "Please select a pretrained model (biobert-pubmed, biobert-pubmed-pmc or bert-base-uncased)"
-fi
 
 export TPU_NAME=biobert-tpu
 export PRETRAINED_DIR=gs://biobert-bucket/biobert-pubmed-pmc
