@@ -21,5 +21,5 @@ python biobert/run_ner.py \
 	   --init_checkpoint=$PRETRAINED_DIR/bert_model.ckpt \
 	   --num_train_epochs=3.0 \
 	   --data_dir=$NER_DIR/ \
-	   --output_dir=$OUTPUT_DIR/$timestamp \
+	   --output_dir=$OUTPUT_DIR/$timestamp/ \
 	   --dataset=$dataset
