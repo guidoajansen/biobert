@@ -85,6 +85,8 @@ flags.DEFINE_float("learning_rate", 5e-5, "The initial learning rate for Adam.")
 
 flags.DEFINE_float("num_train_epochs", 10.0, "Total number of training epochs to perform.")
 
+flags.DEFINE_string("dataset", None, "Set dataset")
+
 flags.DEFINE_float(
     "warmup_proportion", 0.1,
     "Proportion of training to perform linear learning rate warmup for. "
@@ -102,10 +104,10 @@ flags.DEFINE_string("tpu_name",os.environ["TPU_NAME"],"tpu instance name")
 flags.DEFINE_string("tpu_zone",None,"zone - if none will detect default")
 flags.DEFINE_string("gcp_project",None,"project - if none will detect from default")
 
-
 flags.DEFINE_integer(
     "num_tpu_cores", 8,
     "Only used if `use_tpu` is True. Total number of TPU cores to use.")
+
 
 class InputExample(object):
     """A single training/test example for simple sequence classification."""
@@ -154,59 +156,91 @@ class DataProcessor(object):
     @classmethod
     def _read_data(cls, input_file):
         """Reads a BIO data."""
-        with tf.gfile.GFile(input_file) as f:
-            lines = []
-            words = []
-            labels = []
-            for line in f:
-                contends = line.strip()
-                if len(contends) == 0:
-                    assert len(words) == len(labels)
-                    if len(words) > 30:
-                        while len(words) > 30:
-                            tmplabel = labels[:30]
-                            for iidx in range(len(tmplabel)):
-                                if tmplabel.pop() == 'O':
-                                     break
-                            l = ' '.join([label for label in labels[:len(tmplabel)+1] if len(label) > 0])
-                            w = ' '.join([word for word in words[:len(tmplabel)+1] if len(word) > 0])
-                            lines.append([l, w])
-                            words = words[len(tmplabel)+1:]
-                            labels = labels[len(tmplabel)+1:]
 
-                    if len(words) == 0:
+        if FLAGS.dataset == '12b2':
+            with tf.gfile.GFile(input_file) as f:
+                lines = []
+                words = []
+                labels = []
+                for line in f:
+                    contends = line.strip()
+                    if len(contends) == 0:
+                        assert len(words) == len(labels)
+                        if len(words) > 30:
+                            while len(words) > 30:
+                                tmplabel = labels[:30]
+                                for iidx in range(len(tmplabel)):
+                                    if tmplabel.pop() == 'O':
+                                         break
+                                l = ' '.join([label for label in labels[:len(tmplabel)+1] if len(label) > 0])
+                                w = ' '.join([word for word in words[:len(tmplabel)+1] if len(word) > 0])
+                                lines.append([l, w])
+                                words = words[len(tmplabel)+1:]
+                                labels = labels[len(tmplabel)+1:]
+
+                        if len(words) == 0:
+                            continue
+                        l = ' '.join([label for label in labels if len(label) > 0])
+                        w = ' '.join([word for word in words if len(word) > 0])
+                        lines.append([l, w])
+                        words = []
+                        labels = []
                         continue
-                    l = ' '.join([label for label in labels if len(label) > 0])
-                    w = ' '.join([word for word in words if len(word) > 0])
-                    lines.append([l, w])
-                    words = []
-                    labels = []
-                    continue
-                
-                word = line.strip().split()[0]
-                label = line.strip().split()[-1]
-                words.append(word)
-                labels.append(label)
-            return lines
+
+                    word = line.strip().split()[0]
+                    label = line.strip().split()[-1]
+                    words.append(word)
+                    labels.append(label)
+                return lines
+
+        if FLAGS.dataset == 'conll':
+            with open(input_file) as f:
+                lines = []
+                words = []
+                labels = []
+                for line in f:
+                    contends = line.strip()
+                    word = line.strip().split(' ')[0]
+                    label = line.strip().split(' ')[-1]
+                    if contends.startswith("-DOCSTART-"):
+                        continue
+                    if len(contends) == 0:
+
+                        if len(words) == 0: continue
+
+                        l = ' '.join([label for label in labels if len(label) > 0])
+                        w = ' '.join([word for word in words if len(word) > 0])
+                        lines.append([l, w])
+                        words = []
+                        labels = []
+                        continue
+                    words.append(word)
+                    labels.append(label)
+                return lines
 
 class NerProcessor(DataProcessor):
     def get_train_examples(self, data_dir):
         return self._create_example(
-            self._read_data(os.path.join(data_dir, "train_dev.tsv")), "train"
+            self._read_data(os.path.join(data_dir, "train.txt")), "train"
         )
 
     def get_dev_examples(self, data_dir):
         return self._create_example(
-            self._read_data(os.path.join(data_dir, "devel.tsv")), "dev"
+            self._read_data(os.path.join(data_dir, "dev.txt")), "dev"
         )
 
     def get_test_examples(self,data_dir):
         return self._create_example(
-            self._read_data(os.path.join(data_dir, "test.tsv")), "test")
+            self._read_data(os.path.join(data_dir, "test.txt")), "test")
 
 
     def get_labels(self):
-        return ["B", "I", "O", "X", "[CLS]", "[SEP]"] 
+        labels = {
+            '12b2': ["B", "I", "O", "X", "[CLS]", "[SEP]"],
+            'conll': ["B-MISC", "I-MISC", "O", "B-PER", "I-PER", "B-ORG", "I-ORG", "B-LOC", "I-LOC", "X","[CLS]","[SEP]"]
+        }
+
+        return labels(FLAGS.dataset)
 
     def _create_example(self, lines, set_type):
         examples = []
@@ -229,7 +263,7 @@ class NerProcessor(DataProcessor):
 
 def write_tokens(tokens, mode):
     if mode=="test":
-        path = os.path.join(FLAGS.local_output_dir, "token_" + mode + ".txt")
+        path = os.path.join(FLAGS.local_output_dir, FLAGS.dataset, "token_" + mode + ".txt")
 
         if tf.gfile.Exists(path):
           with tf.gfile.GFile(path,'a') as wf:
@@ -408,7 +442,12 @@ def create_model(bert_config, is_training, input_ids, input_mask,
         output_layer = tf.reshape(output_layer, [-1, hidden_size])
         logits = tf.matmul(output_layer, output_weight, transpose_b=True)
         logits = tf.nn.bias_add(logits, output_bias)
-        logits = tf.reshape(logits, [-1, FLAGS.max_seq_length, 7])
+
+        if FLAGS.dataset == '1b2b':
+            logits = tf.reshape(logits, [-1, FLAGS.max_seq_length, 7])
+        if FLAGS.dataset == 'conll':
+            logits = tf.reshape(logits, [-1, FLAGS.max_seq_length, 13])
+
         # mask = tf.cast(input_mask,tf.float32)
         # loss = tf.contrib.seq2seq.sequence_loss(logits,labels,mask)
         # return (loss, logits, predict)
@@ -475,10 +514,18 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
             def metric_fn(per_example_loss, label_ids, logits):
             # def metric_fn(label_ids, logits):
                 predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
-                precision = tf_metrics.precision(label_ids,predictions,7,[1,2],average="macro")
-                recall = tf_metrics.recall(label_ids,predictions,7,[1,2],average="macro")
-                f = tf_metrics.f1(label_ids,predictions,7,[1,2],average="macro")
+
+                if FLAGS.dataset =='1b2b':
+                    precision = tf_metrics.precision(label_ids,predictions,7,[1,2],average="macro")
+                    recall = tf_metrics.recall(label_ids,predictions,7,[1,2],average="macro")
+                    f = tf_metrics.f1(label_ids,predictions,7,[1,2],average="macro")
                 #
+
+                if FLAGS.dataset == 'conll':
+                    precision = tf_metrics.precision(label_ids, predictions, 13, [1,2,4,5,6,7,8,9], average="macro")
+                    recall = tf_metrics.recall(label_ids, predictions, 13, [1,2,4,5,6,7,8,9], average="macro")
+                    f = tf_metrics.f1(label_ids, predictions, 13, [1,2,4,5,6,7,8,9], average="macro")
+
                 return {
                     "eval_precision":precision,
                     "eval_recall":recall,
@@ -646,7 +693,7 @@ def main(_):
         result = [pred['predictions'] for pred in result]
 
         prf = estimator.evaluate(input_fn=predict_input_fn, steps=eval_steps)
-        output_predict_file = os.path.join(FLAGS.local_output_dir, "label_test.txt")
+        output_predict_file = os.path.join(FLAGS.local_output_dir, FLAGS.dataset, "label_test.txt")
         with tf.gfile.GFile(output_predict_file,'w') as writer:
             tf.logging.info("***** token-level evaluation results *****")
             for key in sorted(prf.keys()):
