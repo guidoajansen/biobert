@@ -12,6 +12,8 @@ export PRETRAINED_DIR=gs://biobert-bucket/pre-trained/$pretrained
 export NER_DIR=gs://biobert-bucket/data/$dataset
 export OUTPUT_DIR=gs://biobert-bucket/output/$dataset/$timestamp
 
+rm ./output/$dataset/*.txt
+
 python biobert/run_ner.py \
 	   --do_train=$train \
 	   --do_eval=$eval \

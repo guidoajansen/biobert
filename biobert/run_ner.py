@@ -701,15 +701,15 @@ def main(_):
                 tf.logging.info("  %s = %s", key, str(result[key]))
                 writer.write("%s = %s\n" % (key, str(result[key])))
     if FLAGS.do_predict:
-        label_path = os.path.join(FLAGS.local_output_dir, "label_test.txt")
-        token_path = os.path.join(FLAGS.local_output_dir, "token_test.txt")
-        if os.path.isfile(label_path):
-            print('Removing previous true tokens and labels')
-            os.remove(label_path)
-
-        if os.path.isfile(token_path):
-            print('Removing previous predicted labels')
-            os.remove(token_path)
+        # label_path = os.path.join(FLAGS.local_output_dir, "label_test.txt")
+        # token_path = os.path.join(FLAGS.local_output_dir, "token_test.txt")
+        # if os.path.isfile(label_path):
+        #     print('Removing previous true tokens and labels')
+        #     os.remove(label_path)
+        #
+        # if os.path.isfile(token_path):
+        #     print('Removing previous predicted labels')
+        #     os.remove(token_path)
 
         with tf.gfile.GFile(FLAGS.output_dir+'label2id.pkl','rb') as rf:
             label2id = pickle.load(rf)
