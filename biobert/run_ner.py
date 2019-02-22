@@ -285,24 +285,30 @@ class NerProcessor(DataProcessor):
 #        wf.close()
 
 def write_tokens(tokens, labels, mode):
-    if mode=="test":
+    if mode == "test":
+
+        with tf.gfile.GFile(FLAGS.output_dir + 'label2id.pkl', 'rb') as rf:
+            label2id = pickle.load(rf)
+            id2label = {value: key for key, value in label2id.items()}
+
+        tokens = [token for token in tokens if token != "**NULL**"]
         path = os.path.join(FLAGS.local_output_dir, FLAGS.dataset, "token_" + mode + ".txt")
 
         if tf.gfile.Exists(path):
-          with tf.gfile.GFile(path,'a') as wf:
-            for idx, token in enumerate(tokens):
-              if token!="**NULL**":
-              label = labels[idx]
-              wf.write(token + '\t' + label + '\n')
-            wf.close()
+            with tf.gfile.GFile(path, 'a') as wf:
+                for idx, token in enumerate(tokens):
+                    if token != "**NULL**":
+                        label = id2label[labels[idx]]
+                        wf.write(token + '\t' + label + '\n')
+                wf.close()
 
         else:
-          with tf.gfile.GFile(path,'w+') as wf:
-            for idx, token in enumerate(tokens):
-              if token!="**NULL**":
-              label = labels[idx]
-              wf.write(token + '\t' + label + '\n')
-            wf.close()
+            with tf.gfile.GFile(path, 'w+') as wf:
+                for idx, token in enumerate(tokens):
+                    if token != "**NULL**":
+                        label = id2label[labels[idx]]
+                        wf.write(token + '\t' + label + '\n')
+                wf.close()
 
 def convert_single_example(ex_index, example, label_map, max_seq_length, tokenizer,mode):
     textlist = example.text.split(' ')
@@ -373,7 +379,7 @@ def convert_single_example(ex_index, example, label_map, max_seq_length, tokeniz
         label_ids=label_ids,
         #label_mask = label_mask
     )
-    write_tokens(ntokens, labels ,mode)
+    write_tokens(ntokens, label_ids ,mode)
     return feature
 
 
@@ -732,24 +738,19 @@ def main(_):
 
         prf = estimator.evaluate(input_fn=predict_input_fn, steps=eval_steps)
 
-        tf.logging.info("***** token-level evaluation results *****")
-        for key in sorted(prf.keys()):
-            tf.logging.info("  %s = %s", key, str(prf[key]))
+        output_predict_file = os.path.join(FLAGS.local_output_dir, FLAGS.dataset, "label_test.txt")
+        with tf.gfile.GFile(output_predict_file,'w') as writer:
 
-        output_predict_file = os.path.join(FLAGS.local_output_dir, FLAGS.dataset, "full_test.txt")
-        with tf.gfile.GFile(output_predict_file,'r') as reader:
-            lines = reader.readlines()
+            tf.logging.info("***** token-level evaluation results *****")
+            for key in sorted(prf.keys()):
+                tf.logging.info("  %s = %s", key, str(prf[key]))
 
-
-            for idx, prediction in enumerate(result):
+            for prediction in result:
                 #Temporary fix for padding error (which occasionally cause mismatch between the number of predicted tokens and labels.)
                 chkresult = "".join(str(id) for id in prediction)
                 if (len(chkresult)-1 < chkresult.find('0')) and ('0' != chkresult[chkresult.find('0')+1]):
-                    prediction[chkresult.find('0')] = (label_list.index('0') + 1) #change to O tag
+                    prediction[chkresult.find('0')] = label_list.index('O') #change to O tag
                 output_line = "\n".join(id2label[id] for  id in prediction if id!=0) + "\n"
-
-                lines[idx] += output_line
-
                 writer.write(output_line)
 
 if __name__ == "__main__":
