@@ -703,13 +703,13 @@ def main(_):
     if FLAGS.do_predict:
         label_path = os.path.join(FLAGS.local_output_dir, "label_test.txt")
         token_path = os.path.join(FLAGS.local_output_dir, "token_test.txt")
-        if tf.gfile.Exists(label_path):
+        if os.path.isfile(label_path):
             print('Removing previous true tokens and labels')
-            tf.gfile.Remove(label_path)
+            os.remove(label_path)
 
-        if tf.gfile.Exists(token_path):
+        if os.path.isfile(token_path):
             print('Removing previous predicted labels')
-            tf.gfile.Remove(token_path)
+            os.remove(token_path)
 
         with tf.gfile.GFile(FLAGS.output_dir+'label2id.pkl','rb') as rf:
             label2id = pickle.load(rf)
