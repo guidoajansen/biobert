@@ -299,7 +299,7 @@ def write_tokens(tokens, labels, mode):
                 for idx, token in enumerate(tokens):
                     if token != "**NULL**":
                         label = id2label[labels[idx]]
-                        wf.write(token + '\t' + label + '\n')
+                        wf.write(token + ' ' + label + '\n')
                 wf.close()
 
         else:
@@ -307,7 +307,7 @@ def write_tokens(tokens, labels, mode):
                 for idx, token in enumerate(tokens):
                     if token != "**NULL**":
                         label = id2label[labels[idx]]
-                        wf.write(token + '\t' + label + '\n')
+                        wf.write(token + ' ' + label + '\n')
                 wf.close()
 
 def convert_single_example(ex_index, example, label_map, max_seq_length, tokenizer,mode):
