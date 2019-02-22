@@ -705,9 +705,11 @@ def main(_):
         token_path = os.path.join(FLAGS.local_output_dir, "token_test.txt")
 
         if os.path.exists(label_path):
+            print('Removing previous true tokens and labels')
             os.remove(label_path)
 
         if os.path.exists(token_path):
+            print('Removing previous predicted labels')
             os.remove(token_path)
 
         with tf.gfile.GFile(FLAGS.output_dir+'label2id.pkl','rb') as rf:
