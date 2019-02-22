@@ -701,12 +701,20 @@ def main(_):
                 tf.logging.info("  %s = %s", key, str(result[key]))
                 writer.write("%s = %s\n" % (key, str(result[key])))
     if FLAGS.do_predict:
-        token_path = os.path.join(FLAGS.output_dir, "token_test.txt")
+        label_path = os.path.join(FLAGS.local_output_dir, "token_test.txt")
+        token_path = os.path.join(FLAGS.local_output_dir, "token_test.txt")
+
+        if os.path.exists(label_path):
+            os.remove(label_path)
+
+        if os.path.exists(token_path):
+            os.remove(token_path)
+
         with tf.gfile.GFile(FLAGS.output_dir+'label2id.pkl','rb') as rf:
             label2id = pickle.load(rf)
             id2label = {value:key for key,value in label2id.items()}
-        if os.path.exists(token_path):
-            os.remove(token_path)
+
+
         predict_examples = processor.get_test_examples(FLAGS.data_dir)
 
         predict_file = os.path.join(FLAGS.output_dir, "predict.tf_record")
