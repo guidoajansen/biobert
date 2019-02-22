@@ -291,17 +291,17 @@ def write_tokens(tokens, labels, mode):
         if tf.gfile.Exists(path):
           with tf.gfile.GFile(path,'a') as wf:
             for idx, token in enumerate(tokens):
-              label = labels[idx]
               if token!="**NULL**":
-                wf.write(token + '\t' + label + '\n')
+              label = labels[idx]
+              wf.write(token + '\t' + label + '\n')
             wf.close()
 
         else:
           with tf.gfile.GFile(path,'w+') as wf:
             for idx, token in enumerate(tokens):
-              label = labels[idx]
               if token!="**NULL**":
-                wf.write(token + '\t' + label + '\n')
+              label = labels[idx]
+              wf.write(token + '\t' + label + '\n')
             wf.close()
 
 def convert_single_example(ex_index, example, label_map, max_seq_length, tokenizer,mode):
