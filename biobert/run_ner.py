@@ -701,7 +701,7 @@ def main(_):
                 tf.logging.info("  %s = %s", key, str(result[key]))
                 writer.write("%s = %s\n" % (key, str(result[key])))
     if FLAGS.do_predict:
-        label_path = os.path.join(FLAGS.local_output_dir, "token_test.txt")
+        label_path = os.path.join(FLAGS.local_output_dir, "label_test.txt")
         token_path = os.path.join(FLAGS.local_output_dir, "token_test.txt")
 
         if os.path.exists(label_path):
