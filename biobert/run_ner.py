@@ -703,7 +703,6 @@ def main(_):
     if FLAGS.do_predict:
         label_path = os.path.join(FLAGS.local_output_dir, "label_test.txt")
         token_path = os.path.join(FLAGS.local_output_dir, "token_test.txt")
-
         if os.path.Exists(label_path):
             print('Removing previous true tokens and labels')
             os.remove(label_path)
