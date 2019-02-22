@@ -284,22 +284,28 @@ class NerProcessor(DataProcessor):
 #                wf.write(token+'\n')
 #        wf.close()
 
-def write_tokens(tokens, mode):
+def write_tokens(tokens, labels, mode):
+    with tf.gfile.GFile(FLAGS.output_dir + 'label2id.pkl', 'rb') as rf:
+        label2id = pickle.load(rf)
+        id2label = {value: key for key, value in label2id.items()}
+
     if mode=="test":
         path = os.path.join(FLAGS.local_output_dir, FLAGS.dataset, "token_" + mode + ".txt")
 
         if tf.gfile.Exists(path):
           with tf.gfile.GFile(path,'a') as wf:
-            for token in tokens:
+            for idx, token in enumerate(tokens):
+              label = id2label[labels[idx]]
               if token!="**NULL**":
-                wf.write(token+'\n')
+                wf.write(token + '\t' + label + '\n')
             wf.close()
 
         else:
           with tf.gfile.GFile(path,'w+') as wf:
-            for token in tokens:
+            for idx, token in enumerate(tokens):
+              label = id2label[labels[idx]]
               if token!="**NULL**":
-                wf.write(token+'\n')
+                wf.write(token + '\t' + label + '\n')
             wf.close()
 
 def convert_single_example(ex_index, example, label_map, max_seq_length, tokenizer,mode):
@@ -371,7 +377,7 @@ def convert_single_example(ex_index, example, label_map, max_seq_length, tokeniz
         label_ids=label_ids,
         #label_mask = label_mask
     )
-    write_tokens(ntokens,mode)
+    write_tokens(ntokens, labels ,mode)
     return feature
 
 
@@ -729,17 +735,25 @@ def main(_):
         result = [pred['predictions'] for pred in result]
 
         prf = estimator.evaluate(input_fn=predict_input_fn, steps=eval_steps)
-        output_predict_file = os.path.join(FLAGS.local_output_dir, FLAGS.dataset, "label_test.txt")
-        with tf.gfile.GFile(output_predict_file,'w') as writer:
-            tf.logging.info("***** token-level evaluation results *****")
-            for key in sorted(prf.keys()):
-                tf.logging.info("  %s = %s", key, str(prf[key]))
-            for prediction in result:
+
+        tf.logging.info("***** token-level evaluation results *****")
+        for key in sorted(prf.keys()):
+            tf.logging.info("  %s = %s", key, str(prf[key]))
+
+        output_predict_file = os.path.join(FLAGS.local_output_dir, FLAGS.dataset, "full_test.txt")
+        with tf.gfile.GFile(output_predict_file,'r') as reader:
+            lines = reader.readlines()
+
+
+            for idx, prediction in enumerate(result):
                 #Temporary fix for padding error (which occasionally cause mismatch between the number of predicted tokens and labels.)
                 chkresult = "".join(str(id) for id in prediction)
                 if (len(chkresult)-1 < chkresult.find('0')) and ('0' != chkresult[chkresult.find('0')+1]):
-                    prediction[chkresult.find('0')] = 3 #change to O tag
+                    prediction[chkresult.find('0')] = (label_list.index('0') + 1) #change to O tag
                 output_line = "\n".join(id2label[id] for  id in prediction if id!=0) + "\n"
+
+                lines[idx] += output_line
+
                 writer.write(output_line)
 
 if __name__ == "__main__":
