@@ -285,17 +285,13 @@ class NerProcessor(DataProcessor):
 #        wf.close()
 
 def write_tokens(tokens, labels, mode):
-    with tf.gfile.GFile(FLAGS.output_dir + 'label2id.pkl', 'rb') as rf:
-        label2id = pickle.load(rf)
-        id2label = {value: key for key, value in label2id.items()}
-
     if mode=="test":
         path = os.path.join(FLAGS.local_output_dir, FLAGS.dataset, "token_" + mode + ".txt")
 
         if tf.gfile.Exists(path):
           with tf.gfile.GFile(path,'a') as wf:
             for idx, token in enumerate(tokens):
-              label = id2label[labels[idx]]
+              label = labels[idx]
               if token!="**NULL**":
                 wf.write(token + '\t' + label + '\n')
             wf.close()
@@ -303,7 +299,7 @@ def write_tokens(tokens, labels, mode):
         else:
           with tf.gfile.GFile(path,'w+') as wf:
             for idx, token in enumerate(tokens):
-              label = id2label[labels[idx]]
+              label = labels[idx]
               if token!="**NULL**":
                 wf.write(token + '\t' + label + '\n')
             wf.close()
