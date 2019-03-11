@@ -2,6 +2,7 @@
 train=true
 eval=true
 dotest=true
+doexport=true
 timestamp=$( date +%s )
 dataset="$1"
 pretrained="$2"
@@ -19,6 +20,7 @@ python biobert/run_ner.py \
 	   --do_train=$train \
 	   --do_eval=$eval \
 	   --do_test=$dotest \
+	   --do_export=$doexport \
 	   --use_tpu=true \
 	   --vocab_file=$PRETRAINED_DIR/vocab.txt \
 	   --bert_config_file=$PRETRAINED_DIR/bert_config.json \
