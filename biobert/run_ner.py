@@ -37,10 +37,13 @@ flags.DEFINE_string(
 )
 
 flags.DEFINE_string(
+    "export_dir", None,
+    "The dir where the exported model will be written.")
+
+flags.DEFINE_string(
     "local_output_dir", "output",
     "The output directory where temp results will be written."
 )
-
 
 flags.DEFINE_string(
     "bert_config_file", None,
@@ -253,7 +256,13 @@ class NerProcessor(DataProcessor):
 
     def get_test_examples(self,data_dir):
         return self._create_example(
-            self._read_data(os.path.join(data_dir, "test.txt")), "test")
+            self._read_data(os.path.join(data_dir, "test.txt")), "test"
+        )
+
+    def get_single_example(self, single):
+        return self._create_example(
+            [[single.strip().split(' '), []]]
+        )
 
 
     def get_labels(self):
@@ -589,9 +598,7 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
 
 def main(_):
     tf.logging.set_verbosity(tf.logging.INFO)
-    processors = {
-        "ner": NerProcessor
-    }
+
     if not FLAGS.do_train and not FLAGS.do_eval:
         raise ValueError("At least one of `do_train` or `do_eval` must be True.")
 
@@ -603,19 +610,15 @@ def main(_):
             "was only trained up to sequence length %d" %
             (FLAGS.max_seq_length, bert_config.max_position_embeddings))
 
-    task_name = FLAGS.task_name.lower()
-    if task_name not in processors:
-        raise ValueError("Task not found: %s" % (task_name))
-    processor = processors[task_name]()
 
+    processor = NerProcessor()
     label_list = processor.get_labels()
 
     lower_case = False
     if FLAGS.pretrained == 'bert-base-uncased':
         lower_case = True
+    tokenizer = tokenization.FullTokenizer(vocab_file=FLAGS.vocab_file, do_lower_case=lower_case)
 
-    tokenizer = tokenization.FullTokenizer(
-        vocab_file=FLAGS.vocab_file, do_lower_case=lower_case)
     tpu_cluster_resolver = None
     if FLAGS.use_tpu and FLAGS.tpu_name:
         tpu_cluster_resolver = tf.contrib.cluster_resolver.TPUClusterResolver(
@@ -701,16 +704,6 @@ def main(_):
                 tf.logging.info("  %s = %s", key, str(result[key]))
                 writer.write("%s = %s\n" % (key, str(result[key])))
     if FLAGS.do_predict:
-        # label_path = os.path.join(FLAGS.local_output_dir, "label_test.txt")
-        # token_path = os.path.join(FLAGS.local_output_dir, "token_test.txt")
-        # if os.path.isfile(label_path):
-        #     print('Removing previous true tokens and labels')
-        #     os.remove(label_path)
-        #
-        # if os.path.isfile(token_path):
-        #     print('Removing previous predicted labels')
-        #     os.remove(token_path)
-
         with tf.gfile.GFile(FLAGS.output_dir+'label2id.pkl','rb') as rf:
             label2id = pickle.load(rf)
             id2label = {value:key for key,value in label2id.items()}
@@ -761,6 +754,53 @@ def main(_):
                     prediction[chkresult.find('0')] = label_list.index('O') #change to O tag
                 output_line = "\n".join(id2label[id] for  id in prediction if id!=0) + "\n"
                 writer.write(output_line)
+
+    if FLAGS.do_export:
+        estimator._export_to_tpu = False
+        estimator.export_savedmodel(FLAGS.export_dir, serving_input_fn)
+
+def serving_input_fn():
+    label_ids = tf.placeholder(tf.int32, [None], name='label_ids')
+    input_ids = tf.placeholder(tf.int32, [None, FLAGS.max_seq_length], name='input_ids')
+    input_mask = tf.placeholder(tf.int32, [None, FLAGS.max_seq_length], name='input_mask')
+    segment_ids = tf.placeholder(tf.int32, [None, FLAGS.max_seq_length], name='segment_ids')
+    input_fn = tf.estimator.export.build_raw_serving_input_receiver_fn({
+        'label_ids': label_ids,
+        'input_ids': input_ids,
+        'input_mask': input_mask,
+        'segment_ids': segment_ids,
+    })()
+    return input_fn
+
+
+def predict(sentence):
+    processor = NerProcessor()
+    label_list = processor.get_labels()
+
+    predict_examples = processor.get_single_example(FLAGS.single)
+
+    predict_file = os.path.join(FLAGS.output_dir, "predict.tf_record")
+    filed_based_convert_examples_to_features(predict_examples, label_list,
+                                             FLAGS.max_seq_length, tokenizer,
+                                             predict_file, mode="test")
+
+    predict_drop_remainder = True if FLAGS.use_tpu else False
+    predict_input_fn = file_based_input_fn_builder(
+        input_file=predict_file,
+        seq_length=FLAGS.max_seq_length,
+        is_training=False,
+        drop_remainder=predict_drop_remainder)
+
+    eval_steps = None
+    if FLAGS.use_tpu:
+        eval_steps = int(len(predict_examples) / FLAGS.eval_batch_size)
+
+    result = estimator.predict(input_fn=predict_input_fn)
+    result = list(result)
+    result = [pred['predictions'] for pred in result]
+
+    prf = estimator.evaluate(input_fn=predict_input_fn, steps=eval_steps)
+
 
 if __name__ == "__main__":
     flags.mark_flag_as_required("data_dir")

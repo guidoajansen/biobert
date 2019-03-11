@@ -11,6 +11,7 @@ export TPU_NAME=biobert-tpu
 export PRETRAINED_DIR=gs://biobert-bucket/pre-trained/$pretrained
 export NER_DIR=gs://biobert-bucket/data/$dataset
 export OUTPUT_DIR=gs://biobert-bucket/output/$dataset/$timestamp
+export OUTPUT_DIR=gs://biobert-bucket/export/$dataset/$timestamp
 
 rm ./output/$dataset/*.txt
 
@@ -25,5 +26,6 @@ python biobert/run_ner.py \
 	   --num_train_epochs=$epochs \
 	   --data_dir=$NER_DIR/ \
 	   --output_dir=$OUTPUT_DIR/ \
+	   --export_dir=$EXPORT_DIR/ \
 	   --dataset=$dataset \
 	   --pretrained=$pretrained
