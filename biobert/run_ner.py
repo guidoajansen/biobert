@@ -793,33 +793,33 @@ def serving_input_fn():
     return tf.estimator.export.ServingInputReceiver(features, receiver_tensors)
 
 
-def predict(sentence):
-    processor = NerProcessor()
-    label_list = processor.get_labels()
-
-    predict_examples = processor.get_single_example(FLAGS.single)
-
-    predict_file = os.path.join(FLAGS.output_dir, "predict.tf_record")
-    filed_based_convert_examples_to_features(predict_examples, label_list,
-                                             FLAGS.max_seq_length, tokenizer,
-                                             predict_file, mode="test")
-
-    predict_drop_remainder = True if FLAGS.use_tpu else False
-    predict_input_fn = file_based_input_fn_builder(
-        input_file=predict_file,
-        seq_length=FLAGS.max_seq_length,
-        is_training=False,
-        drop_remainder=predict_drop_remainder)
-
-    eval_steps = None
-    if FLAGS.use_tpu:
-        eval_steps = int(len(predict_examples) / FLAGS.eval_batch_size)
-
-    result = estimator.predict(input_fn=predict_input_fn)
-    result = list(result)
-    result = [pred['predictions'] for pred in result]
-
-    prf = estimator.evaluate(input_fn=predict_input_fn, steps=eval_steps)
+# def predict(sentence):
+#     processor = NerProcessor()
+#     label_list = processor.get_labels()
+#
+#     predict_examples = processor.get_single_example(FLAGS.single)
+#
+#     predict_file = os.path.join(FLAGS.output_dir, "predict.tf_record")
+#     filed_based_convert_examples_to_features(predict_examples, label_list,
+#                                              FLAGS.max_seq_length, tokenizer,
+#                                              predict_file, mode="test")
+#
+#     predict_drop_remainder = True if FLAGS.use_tpu else False
+#     predict_input_fn = file_based_input_fn_builder(
+#         input_file=predict_file,
+#         seq_length=FLAGS.max_seq_length,
+#         is_training=False,
+#         drop_remainder=predict_drop_remainder)
+#
+#     eval_steps = None
+#     if FLAGS.use_tpu:
+#         eval_steps = int(len(predict_examples) / FLAGS.eval_batch_size)
+#
+#     result = estimator.predict(input_fn=predict_input_fn)
+#     result = list(result)
+#     result = [pred['predictions'] for pred in result]
+#
+#     prf = estimator.evaluate(input_fn=predict_input_fn, steps=eval_steps)
 
 
 if __name__ == "__main__":
