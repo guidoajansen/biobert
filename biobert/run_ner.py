@@ -594,7 +594,10 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
                 scaffold_fn=scaffold_fn)
         else:
             output_spec = tf.contrib.tpu.TPUEstimatorSpec(
-                mode = mode,predictions= predicts,scaffold_fn=scaffold_fn
+                mode = mode,
+                predictions= predicts,
+
+                scaffold_fn=scaffold_fn
             )
         return output_spec
     return model_fn
@@ -764,17 +767,30 @@ def main(_):
         estimator.export_savedmodel(FLAGS.export_dir, serving_input_fn)
 
 def serving_input_fn():
-    label_ids = tf.placeholder(tf.int32, [None], name='label_ids')
-    input_ids = tf.placeholder(tf.int32, [None, FLAGS.max_seq_length], name='input_ids')
-    input_mask = tf.placeholder(tf.int32, [None, FLAGS.max_seq_length], name='input_mask')
-    segment_ids = tf.placeholder(tf.int32, [None, FLAGS.max_seq_length], name='segment_ids')
-    input_fn = tf.estimator.export.build_raw_serving_input_receiver_fn({
-        'label_ids': label_ids,
-        'input_ids': input_ids,
-        'input_mask': input_mask,
-        'segment_ids': segment_ids,
-    })()
-    return input_fn
+    # label_ids = tf.placeholder(tf.int32, [None], name='label_ids')
+    # input_ids = tf.placeholder(tf.int32, [None, FLAGS.max_seq_length], name='input_ids')
+    # input_mask = tf.placeholder(tf.int32, [None, FLAGS.max_seq_length], name='input_mask')
+    # segment_ids = tf.placeholder(tf.int32, [None, FLAGS.max_seq_length], name='segment_ids')
+    # input_fn = tf.estimator.export.build_raw_serving_input_receiver_fn({
+    #     'label_ids': label_ids,
+    #     'input_ids': input_ids,
+    #     'input_mask': input_mask,
+    #     'segment_ids': segment_ids,
+    # })()
+    # return input_fn
+
+    feature_spec = {
+        "input_ids": tf.FixedLenFeature([FLAGS.max_seq_length], tf.int64),
+        "input_mask": tf.FixedLenFeature([FLAGS.max_seq_length], tf.int64),
+        "segment_ids": tf.FixedLenFeature([FLAGS.max_seq_length], tf.int64),
+        "label_ids": tf.FixedLenFeature([], tf.int64),
+    }
+    serialized_tf_example = tf.placeholder(dtype=tf.string,
+                                           shape=[None],
+                                           name='input_example_tensor')
+    receiver_tensors = {'examples': serialized_tf_example}
+    features = tf.parse_example(serialized_tf_example, feature_spec)
+    return tf.estimator.export.ServingInputReceiver(features, receiver_tensors)
 
 
 def predict(sentence):
