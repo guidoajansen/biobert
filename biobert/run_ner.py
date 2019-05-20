@@ -229,8 +229,8 @@ class DataProcessor(object):
                 labels = []
                 for line in f:
                     contends = line.strip()
-                    word = line.strip().split(' ')[0]
-                    label = line.strip().split(' ')[-1]
+                    word = line.strip().split(' ')[0].strip()
+                    label = line.strip().split(' ')[-1].strip()
                     if contends.startswith("-DOCSTART-"):
                         continue
                     if len(contends) == 0:
