@@ -568,21 +568,41 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
                     f = tf_metrics.f1(label_ids,predictions,7,[1,2],average="macro")
                 #
 
+#                 if FLAGS.dataset == 'conll':
+#                     precision = tf_metrics.precision(label_ids, predictions, 13, [1,2,4,5,6,7,8,9], average="macro")
+#                     recall = tf_metrics.recall(label_ids, predictions, 13, [1,2,4,5,6,7,8,9], average="macro")
+#                     f = tf_metrics.f1(label_ids, predictions, 13, [1,2,4,5,6,7,8,9], average="macro")
                 if FLAGS.dataset == 'conll':
-                    precision = tf_metrics.precision(label_ids, predictions, 13, [1,2,4,5,6,7,8,9], average="macro")
-                    recall = tf_metrics.recall(label_ids, predictions, 13, [1,2,4,5,6,7,8,9], average="macro")
-                    f = tf_metrics.f1(label_ids, predictions, 13, [1,2,4,5,6,7,8,9], average="macro")
+                     com_p = tf_metrics.precision(label_ids, predictions, 13, [1,2], average="macro")
+                     brand_p = tf_metrics.precision(label_ids, predictions, 13, [3,4], average="macro")
+                     dev_p = tf_metrics.precision(label_ids, predictions, 13, [5,6], average="macro") 
+                    
+                     com_r = tf_metrics.recall(label_ids, predictions, 13, [1,2], average="macro")
+                     brand_r = tf_metrics.recall(label_ids, predictions, 13, [3,4], average="macro")
+                     dev_r = tf_metrics.recall(label_ids, predictions, 13, [5,6], average="macro") 
+                        
+                     com_f = tf_metrics.f1(label_ids, predictions, 13, [1,2], average="macro")
+                     brand_f = tf_metrics.f1(label_ids, predictions, 13, [3,4], average="macro")
+                     dev_f = tf_metrics.f1(label_ids, predictions, 13, [5,6], average="macro") 
+                    
+                     f = tf_metrics.f1(label_ids, predictions, 13, [1,2,4,5,6,7,8,9], average="macro")
 
-                if FLAGS.dataset == 'scito':
-                    precision = tf_metrics.precision(label_ids, predictions, 11, [1,2,3,4,5,6,7], average="micro")
-                    recall = tf_metrics.recall(label_ids, predictions, 11, [1,2,3,4,5,6,7], average="micro")
-                    f = tf_metrics.f1(label_ids, predictions, 11, [1,2,3,4,5,6,7], average="micro")
+                    if FLAGS.dataset == 'scito':
+                    precision = tf_metrics.precision(label_ids, predictions, 11, [1,2,3,4,5,6,7], average="macro")
+                    recall = tf_metrics.recall(label_ids, predictions, 11, [1,2,3,4,5,6,7], average="macro")
+                    f = tf_metrics.f1(label_ids, predictions, 11, [1,2,3,4,5,6,7], average="macro")
 
 
                 return {
-                    "eval_precision":precision,
-                    "eval_recall":recall,
-                    "eval_f": f,
+                    "com_p":com_p,
+                    "brand_p":brand_p,
+                    "dev_p":dev_p,
+                    "com_r":com_r,
+                    "brand_r":brand_r,
+                    "dev_r":dev_r,                    
+                    "com_f":com_f,
+                    "brand_f":brand_f,
+                    "dev_f":dev_f,  
                     #"eval_loss": loss,
                 }
             eval_metrics = (metric_fn, [per_example_loss, label_ids, logits])
